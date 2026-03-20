@@ -17,6 +17,20 @@ const HotelSchema = new mongoose.Schema({
     tel: {
         type: String,
         required: [true, 'Please add a telephone number']
+    },
+    picture: {
+        type: String,
+        default: null
+    },
+    rating: {
+        type: Number,
+        min: 1,
+        max: 5,
+        default: null
+    },
+    description: {
+        type: String,
+        default: null
     }
 },{
     toJSON: { virtuals: true },
