@@ -28,8 +28,11 @@ app.use(express.json());
 //Cookie parser
 app.use(cookieParser());
 
-//Sanitize data
-app.use(mongoSanitize());
+//Sanitize data (manual apply to body only — req.query is getter-only in Express 5)
+app.use((req, res, next) => {
+    if (req.body) req.body = mongoSanitize.sanitize(req.body);
+    next();
+});
 
 //Set security headers
 app.use(helmet());
