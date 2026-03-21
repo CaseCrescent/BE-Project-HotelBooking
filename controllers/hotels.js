@@ -56,7 +56,7 @@ exports.getHotels = async (req, res, next) => {
 
     res.status(200).json({ success: true, count: hotels.length, pagination, data: hotels });
   } catch (err) {
-    res.status(400).json({ success: false });
+    res.status(400).json({ success: false, message: err.message });
   }
 };
 
@@ -64,11 +64,12 @@ exports.getHotel = async (req, res, next) => {
   try {
     const hotel = await Hotel.findById(req.params.id);
     if (!hotel) {
-      return res.status(400).json({ success: false });
+      // 404 ถูกกว่า 400 เพราะ resource ไม่มีอยู่จริง
+      return res.status(404).json({ success: false, message: `Hotel not found with id of ${req.params.id}` });
     }
     res.status(200).json({ success: true, data: hotel });
   } catch (err) {
-    res.status(400).json({ success: false });
+    res.status(400).json({ success: false, message: err.message });
   }
 };
 
@@ -91,11 +92,11 @@ exports.updateHotel = async (req, res, next) => {
       runValidators: true
     });
     if (!hotel) {
-      return res.status(400).json({ success: false });
+      return res.status(404).json({ success: false, message: `Hotel not found with id of ${req.params.id}` });
     }
     res.status(200).json({ success: true, data: hotel });
   } catch (err) {
-    res.status(400).json({ success: false });
+    res.status(400).json({ success: false, message: err.message });
   }
 };
 
@@ -109,7 +110,6 @@ exports.deleteHotel = async (req, res, next) => {
     await hotel.deleteOne();
     res.status(200).json({ success: true, data: {} });
   } catch (err) {
-    console.log(err.stack);
-    res.status(400).json({ success: false });
+    res.status(400).json({ success: false, message: err.message });
   }
 };
