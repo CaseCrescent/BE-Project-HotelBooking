@@ -1,14 +1,18 @@
 const express = require('express');
 const { getHotels, getHotel, createHotel, updateHotel, deleteHotel } = require('../controllers/hotels');
+const { getHotelAvailability, checkAvailability } = require('../controllers/availability');
 
-// Include other resource routers
 const bookingRouter = require('./bookings');
 const router = express.Router();
 
 const { protect, authorize } = require('../middleware/auth');
 
-// Re-route into other resource routers (เปลี่ยนจาก appointments เป็น bookings)
+// Nested routers
 router.use('/:hotelId/bookings', bookingRouter);
+
+// Per-hotel availability (public)
+router.get('/:hotelId/availability', getHotelAvailability);
+router.get('/:hotelId/availability/check', checkAvailability);
 
 router.route('/')
     .get(getHotels)

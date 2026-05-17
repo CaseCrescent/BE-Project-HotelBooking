@@ -1,8 +1,6 @@
 const mongoose = require('mongoose');
 
-// เปลี่ยนจาก HospitalSchema เป็น HotelSchema
 const HotelSchema = new mongoose.Schema({
-    // ตาม Requirement ข้อ 3: hotel name, address, and telephone number
     name: {
         type: String,
         required: [true, 'Please add a name'],
@@ -31,28 +29,45 @@ const HotelSchema = new mongoose.Schema({
     description: {
         type: String,
         default: null
+    },
+    // ----- New fields (all optional, default values keep prior API surface intact) -----
+    roomCount: {
+        type: Number,
+        min: 1,
+        default: 10
+    },
+    pricePerNight: {
+        type: Number,
+        min: 0,
+        default: 1500
+    },
+    amenities: {
+        type: [String],
+        default: []
+    },
+    checkInTime: {
+        type: String,
+        default: '14:00'
+    },
+    checkOutTime: {
+        type: String,
+        default: '12:00'
     }
-},{
+}, {
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
 
-//Reverse populate with virtuals
-// เปลี่ยนจาก appointments เป็น bookings
 HotelSchema.virtual('bookings', {
-    ref: 'Booking', // อ้างอิงไปที่ Model Booking
+    ref: 'Booking',
     localField: '_id',
-    foreignField: 'hotel', // อ้างอิงไปที่ฟิลด์ hotel ใน Booking
+    foreignField: 'hotel',
     justOne: false
 });
 
-//**Add**//
-
-// Cascade delete bookings when a hotel is deleted
-HotelSchema.pre('deleteOne', { document: true, query: false }, async function(next) {
+HotelSchema.pre('deleteOne', { document: true, query: false }, async function (next) {
     console.log(`Bookings being removed from hotel ${this._id}`);
     await this.model('Booking').deleteMany({ hotel: this._id });
 });
 
-// เปลี่ยน export เป็น Hotel
 module.exports = mongoose.model('Hotel', HotelSchema);

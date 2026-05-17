@@ -19,6 +19,8 @@ connectDB();
 const hotels = require('./routes/hotels');
 const auth = require('./routes/auth');
 const bookings = require('./routes/bookings');
+const availability = require('./routes/availability');
+const publicApi = require('./routes/public');
 
 const app = express();
 
@@ -60,6 +62,8 @@ app.set('query parser', 'extended');
 app.use('/api/v1/hotels', hotels);
 app.use('/api/v1/auth', auth);
 app.use('/api/v1/bookings', bookings);
+app.use('/api/v1/availability', availability);
+app.use('/api/public', publicApi);
 
 const PORT = process.env.PORT || 5000;
 // ให้รัน app.listen เฉพาะตอนที่ไม่ได้อยู่บน Vercel (ป้องกัน Timeout)
