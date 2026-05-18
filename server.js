@@ -21,6 +21,9 @@ const auth = require('./routes/auth');
 const bookings = require('./routes/bookings');
 const availability = require('./routes/availability');
 const publicApi = require('./routes/public');
+const reviews = require('./routes/reviews');
+const roomServices = require('./routes/roomServices');
+const users = require('./routes/users');
 
 const app = express();
 
@@ -63,6 +66,9 @@ app.use('/api/v1/hotels', hotels);
 app.use('/api/v1/auth', auth);
 app.use('/api/v1/bookings', bookings);
 app.use('/api/v1/availability', availability);
+app.use('/api/v1/reviews', reviews);
+app.use('/api/v1/roomservices', roomServices);
+app.use('/api/v1/users', users);
 app.use('/api/public', publicApi);
 
 const PORT = process.env.PORT || 5000;

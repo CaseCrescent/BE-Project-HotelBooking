@@ -21,7 +21,7 @@ exports.listHotels = async (req, res) => {
         const q = (req.query.q || '').trim();
         const filter = q ? { name: { $regex: q, $options: 'i' } } : {};
         const hotels = await Hotel.find(filter)
-            .select('name address tel picture rating description pricePerNight roomCount checkInTime checkOutTime')
+            .select('name address tel picture rating description pricePerNight roomCount amenities checkInTime checkOutTime')
             .limit(limit);
         res.status(200).json({ success: true, count: hotels.length, data: hotels });
     } catch (err) {

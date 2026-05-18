@@ -49,6 +49,10 @@ exports.login=async (req,res,next)=>{
             return res.status(401).json({ success:false, message:'Invalid credentials' });
         }
 
+        if (user.banned) {
+            return res.status(403).json({ success: false, message: 'Account suspended. Contact an administrator.' });
+        }
+
         sendTokenResponse(user,200,res);
 
     } catch (err) {

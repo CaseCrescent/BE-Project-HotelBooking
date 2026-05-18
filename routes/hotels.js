@@ -3,12 +3,16 @@ const { getHotels, getHotel, createHotel, updateHotel, deleteHotel } = require('
 const { getHotelAvailability, checkAvailability } = require('../controllers/availability');
 
 const bookingRouter = require('./bookings');
+const reviewRouter = require('./reviews');
+const roomServiceRouter = require('./roomServices');
 const router = express.Router();
 
 const { protect, authorize } = require('../middleware/auth');
 
 // Nested routers
 router.use('/:hotelId/bookings', bookingRouter);
+router.use('/:hotelId/reviews', reviewRouter);
+router.use('/:hotelId/roomservices', roomServiceRouter);
 
 // Per-hotel availability (public)
 router.get('/:hotelId/availability', getHotelAvailability);

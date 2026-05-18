@@ -23,6 +23,9 @@ exports.protect = async (req, res, next) => {
         if (!req.user) {
             return res.status(401).json({ success: false, message: 'Not authorized to access this route, Account no longer exists' });
         }
+        if (req.user.banned) {
+            return res.status(403).json({ success: false, message: 'Account suspended. Contact an administrator.' });
+        }
         next();
     } catch (err) {
         console.log(err.stack);

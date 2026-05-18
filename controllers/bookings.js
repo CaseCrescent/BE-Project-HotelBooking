@@ -1,6 +1,37 @@
 const Booking = require('../models/Booking');
 const Hotel = require('../models/Hotel');
+const RoomService = require('../models/RoomService');
 const { hasAvailability } = require('../utils/availability');
+
+// Validate and snapshot roomServices for a booking.
+// Input: [{ service: id, quantity }, ...]   Output: [{ service, name, price, quantity }, ...]
+async function snapshotRoomServices(rawServices, hotelId) {
+    if (!Array.isArray(rawServices) || rawServices.length === 0) return [];
+    const ids = rawServices
+        .map((s) => s?.service || s?.serviceId || s?._id)
+        .filter(Boolean);
+    if (ids.length === 0) return [];
+    const services = await RoomService.find({ _id: { $in: ids }, hotel: hotelId, active: true });
+    const byId = new Map(services.map((s) => [s._id.toString(), s]));
+    const snapshot = [];
+    for (const raw of rawServices) {
+        const sid = (raw?.service || raw?.serviceId || raw?._id || '').toString();
+        const svc = byId.get(sid);
+        if (!svc) {
+            const err = new Error(`Room service ${sid} is not available for this hotel`);
+            err.statusCode = 400;
+            throw err;
+        }
+        const qty = Math.max(1, parseInt(raw?.quantity, 10) || 1);
+        if (svc.dailyCapacity != null && qty > svc.dailyCapacity) {
+            const err = new Error(`Service "${svc.name}" capped at ${svc.dailyCapacity} per day`);
+            err.statusCode = 400;
+            throw err;
+        }
+        snapshot.push({ service: svc._id, name: svc.name, price: svc.price, quantity: qty });
+    }
+    return snapshot;
+}
 
 // @desc    Get all bookings
 // @route   GET /api/v1/bookings
@@ -101,6 +132,13 @@ exports.addBooking = async (req, res, next) => {
             });
         }
 
+        // Optional add-on services — snapshot name/price so display survives later edits.
+        try {
+            req.body.roomServices = await snapshotRoomServices(req.body.roomServices, hotel._id);
+        } catch (svcErr) {
+            return res.status(svcErr.statusCode || 400).json({ success: false, message: svcErr.message });
+        }
+
         const booking = await Booking.create(req.body);
         res.status(200).json({ success: true, data: booking });
     } catch (err) {
@@ -180,6 +218,74 @@ exports.cancelBooking = async (req, res) => {
         res.status(200).json({ success: true, data: booking });
     } catch (err) {
         return res.status(500).json({ success: false, message: 'Cannot cancel booking' });
+    }
+};
+
+// @desc    Check-in a booking (status='checked_in'). Allowed when today is within the stay window.
+// @route   PATCH /api/v1/bookings/:id/check-in
+// @access  Private (admin or booking owner)
+exports.checkInBooking = async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) {
+            return res.status(404).json({ success: false, message: 'Booking not found' });
+        }
+        if (booking.user.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(401).json({ success: false, message: 'Not authorized' });
+        }
+        if (booking.status === 'cancelled') {
+            return res.status(409).json({ success: false, message: 'Cannot check in a cancelled booking' });
+        }
+        if (booking.status === 'completed') {
+            return res.status(409).json({ success: false, message: 'Booking already completed' });
+        }
+
+        // Window check (admin can override with ?force=true)
+        const start = new Date(booking.bookingDate);
+        start.setUTCHours(0, 0, 0, 0);
+        const end = new Date(start);
+        end.setUTCDate(end.getUTCDate() + booking.numOfNights);
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
+        const force = req.query.force === 'true' && req.user.role === 'admin';
+        if (!force && (today < start || today >= end)) {
+            return res.status(409).json({
+                success: false,
+                message: 'Check-in only allowed inside the booking window'
+            });
+        }
+
+        booking.status = 'checked_in';
+        await booking.save();
+        res.status(200).json({ success: true, data: booking });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Cannot check in booking' });
+    }
+};
+
+// @desc    Mark a booking complete (status='completed'). Allowed from checked_in OR after stay end.
+// @route   PATCH /api/v1/bookings/:id/complete
+// @access  Private (admin only)
+exports.completeBooking = async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) {
+            return res.status(404).json({ success: false, message: 'Booking not found' });
+        }
+        if (req.user.role !== 'admin') {
+            return res.status(401).json({ success: false, message: 'Admin only' });
+        }
+        if (booking.status === 'cancelled') {
+            return res.status(409).json({ success: false, message: 'Cannot complete a cancelled booking' });
+        }
+        if (booking.status === 'completed') {
+            return res.status(200).json({ success: true, data: booking, message: 'Already completed' });
+        }
+        booking.status = 'completed';
+        await booking.save();
+        res.status(200).json({ success: true, data: booking });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Cannot complete booking' });
     }
 };
 

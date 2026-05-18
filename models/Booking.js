@@ -46,6 +46,18 @@ const BookingSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
+    // Add-on room services picked at booking time.
+    // Stored denormalized so price/name at time-of-booking is preserved even if the
+    // service is later edited or deactivated.
+    roomServices: {
+        type: [{
+            service: { type: mongoose.Schema.ObjectId, ref: 'RoomService', required: true },
+            name: { type: String, default: '' },
+            price: { type: Number, default: 0, min: 0 },
+            quantity: { type: Number, default: 1, min: 1 }
+        }],
+        default: []
+    },
     createdAt: {
         type: Date,
         default: Date.now

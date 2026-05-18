@@ -6,7 +6,9 @@ const {
     updateBooking,
     deleteBooking,
     cancelBooking,
-    getBookingPublic
+    getBookingPublic,
+    checkInBooking,
+    completeBooking
 } = require('../controllers/bookings');
 
 const router = express.Router({ mergeParams: true });
@@ -27,5 +29,9 @@ router.route('/:id')
 
 // Soft cancel (preserves the row, flips status to 'cancelled')
 router.patch('/:id/cancel', protect, authorize('admin', 'user'), cancelBooking);
+
+// Lifecycle transitions
+router.patch('/:id/check-in', protect, authorize('admin', 'user'), checkInBooking);
+router.patch('/:id/complete', protect, authorize('admin'), completeBooking);
 
 module.exports = router;
