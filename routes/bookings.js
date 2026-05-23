@@ -8,7 +8,8 @@ const {
     cancelBooking,
     getBookingPublic,
     checkInBooking,
-    completeBooking
+    completeBooking,
+    payBooking
 } = require('../controllers/bookings');
 
 const router = express.Router({ mergeParams: true });
@@ -33,5 +34,8 @@ router.patch('/:id/cancel', protect, authorize('admin', 'user'), cancelBooking);
 // Lifecycle transitions
 router.patch('/:id/check-in', protect, authorize('admin', 'user'), checkInBooking);
 router.patch('/:id/complete', protect, authorize('admin'), completeBooking);
+
+// Mock payment
+router.post('/:id/pay', protect, authorize('admin', 'user'), payBooking);
 
 module.exports = router;

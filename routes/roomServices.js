@@ -8,14 +8,15 @@ const {
 } = require('../controllers/roomServices');
 
 const router = express.Router({ mergeParams: true });
-const { protect, authorize } = require('../middleware/auth');
+const { protect, softAuth, authorize } = require('../middleware/auth');
 
+// softAuth on GETs so admin can read inactive services with ?includeInactive=true
 router.route('/')
-    .get(getRoomServices)
+    .get(softAuth, getRoomServices)
     .post(protect, authorize('admin'), addRoomService);
 
 router.route('/:id')
-    .get(getRoomService)
+    .get(softAuth, getRoomService)
     .put(protect, authorize('admin'), updateRoomService)
     .delete(protect, authorize('admin'), deleteRoomService);
 

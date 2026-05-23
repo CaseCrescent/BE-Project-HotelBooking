@@ -80,14 +80,13 @@ HotelSchema.virtual('roomServices', {
 });
 
 // Cascade: when a hotel is deleted, drop all child rows that reference it.
-HotelSchema.pre('deleteOne', { document: true, query: false }, async function (next) {
+HotelSchema.pre('deleteOne', { document: true, query: false }, async function () {
     const hotelId = this._id;
     await Promise.all([
         this.model('Booking').deleteMany({ hotel: hotelId }),
         this.model('Review').deleteMany({ hotel: hotelId }),
         this.model('RoomService').deleteMany({ hotel: hotelId })
     ]);
-    next();
 });
 
 module.exports = mongoose.model('Hotel', HotelSchema);

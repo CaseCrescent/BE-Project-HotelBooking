@@ -94,7 +94,7 @@ exports.getBooking = async (req, res, next) => {
 exports.getBookingPublic = async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.id)
-            .select('bookingDate numOfNights status confirmationNumber hotel createdAt')
+            .select('bookingDate numOfNights status confirmationNumber hotel roomServices createdAt paymentStatus')
             .populate({ path: 'hotel', select: 'name address tel picture checkInTime checkOutTime' });
 
         if (!booking) {
@@ -306,5 +306,28 @@ exports.deleteBooking = async (req, res, next) => {
     } catch (err) {
         console.error(err.stack);
         return res.status(500).json({ success: false, message: 'Cannot delete Booking' });
+    }
+};
+
+// @desc    Mock payment for a booking
+// @route   POST /api/v1/bookings/:id/pay
+// @access  Private (owner or admin)
+exports.payBooking = async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) {
+            return res.status(404).json({ success: false, message: `No booking with the id of ${req.params.id}` });
+        }
+        if (booking.user.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(401).json({ success: false, message: 'Not authorized to pay this booking' });
+        }
+        if (booking.paymentStatus === 'paid') {
+            return res.status(200).json({ success: true, data: booking, message: 'Already paid' });
+        }
+        booking.paymentStatus = 'paid';
+        await booking.save();
+        res.status(200).json({ success: true, data: booking });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Cannot process payment' });
     }
 };

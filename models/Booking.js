@@ -58,6 +58,11 @@ const BookingSchema = new mongoose.Schema({
         }],
         default: []
     },
+    paymentStatus: {
+        type: String,
+        enum: ['pending', 'paid', 'refunded'],
+        default: 'pending'
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -66,7 +71,7 @@ const BookingSchema = new mongoose.Schema({
 
 // Cheap, human-readable confirmation number: HB-<yyMMdd>-<random6>
 // Generated only on first save when missing.
-BookingSchema.pre('save', async function (next) {
+BookingSchema.pre('save', async function () {
     if (this.isNew && !this.confirmationNumber) {
         const d = new Date(this.bookingDate || Date.now());
         const yy = String(d.getUTCFullYear()).slice(-2);
@@ -75,7 +80,6 @@ BookingSchema.pre('save', async function (next) {
         const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
         this.confirmationNumber = `HB-${yy}${mm}${dd}-${rand}`;
     }
-    next();
 });
 
 // Lookup helpers
